@@ -37,12 +37,12 @@ export async function loader({
 }: {
   params: { id?: string };
 }): Promise<{ case: SingleCaseType }> {
-  // Mock request: real API will use getCase(params.id) later
-  const caseData = (await getRequest(
-    `/cases/${params.id ?? ""}`,
-    MOCK_CASE,
-  )) as SingleCaseType;
-  return { case: caseData };
+  try {
+    const caseData = await getRequest<SingleCaseType>(`/cases/${params.id ?? ""}`);
+    return { case: caseData };
+  } catch {
+    return { case: MOCK_CASE as SingleCaseType };
+  }
 }
 
 function SingleCasePage() {
