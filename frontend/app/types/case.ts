@@ -35,4 +35,13 @@ export interface SingleCaseType {
   Most_Recent_Activity_Date: string;
   Keyword: string;
   Jurisdiction_Type_Text: string;
+
+  Secondary_Sources?: SingleCaseSecondarySourceType[];
+}
+
+export interface SingleCaseSecondarySourceType {
+  id: number;
+  Case_Number: string;
+  Secondary_Source_Link: string;
+  Secondary_Source_Title: string;
 }
