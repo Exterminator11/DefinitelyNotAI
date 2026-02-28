@@ -1,8 +1,10 @@
 import pandas as pd
 import sqlite3
 import re
+import os
 
 excel_file = "/Users/rachitdas/Desktop/DefinitelyNotAI/Case_Table_2026-Feb-21_1952.xlsx"
+secondary_source_file = "/Users/rachitdas/Desktop/DefinitelyNotAI/Secondary_Source_Coverage_Table_2026-Feb-21_2058.xlsx"
 db_name = 'ai_litigation.db'
 
 def map_caspio_to_sql(caspio_type):
@@ -76,5 +78,40 @@ def extract_and_build():
     conn.commit()
     conn.close()
 
+
+def extract_secondary_sources():
+    print(f"Opening {secondary_source_file}...")
+    
+    df = pd.read_excel(secondary_source_file, sheet_name='Secondary_Source_Coverage_Table')
+    
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    
+    print("Creating secondary_sources table...")
+    cursor.execute("DROP TABLE IF EXISTS secondary_sources;")
+    cursor.execute("""
+        CREATE TABLE secondary_sources (
+            id INTEGER PRIMARY KEY,
+            Case_Number INTEGER,
+            Secondary_Source_Link TEXT,
+            Secondary_Source_Title TEXT
+        );
+    """)
+    
+    df.columns = [re.sub(r'[^a-zA-Z0-9_]', '', str(col)) for col in df.columns]
+    
+    print("Loading secondary sources data into SQL...")
+    df.to_sql('secondary_sources', conn, if_exists='append', index=False)
+    
+    cursor.execute("SELECT COUNT(*) FROM secondary_sources;")
+    record_count = cursor.fetchone()[0]
+    
+    print(f"Success! {record_count} secondary source records inserted.")
+    
+    conn.commit()
+    conn.close()
+
+
 if __name__ == "__main__":
     extract_and_build()
+    extract_secondary_sources()
