@@ -188,7 +188,7 @@ def get_case_details(case_id):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    cursor.execute("SELECT * FROM cases WHERE id = ?", (case_id,))
+    cursor.execute("SELECT * FROM cases WHERE Record_Number = ?", (case_id,))
     case = cursor.fetchone()
     
     if not case:
