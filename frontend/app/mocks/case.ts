@@ -69,3 +69,31 @@ export const MOCK_CASE: SingleCaseType = {
     },
   ],
 };
+
+export const MOCK_CASES: SingleCaseType[] = [
+  MOCK_CASE,
+  {
+    ...MOCK_CASE,
+    Case_snug: "epic-systems-v-lewis",
+    id: 2,
+    Record_Number: 1002,
+    Caption: "Epic Systems Corp. v. Lewis",
+    Brief_Description: "Arbitration agreements and class action waivers in employment contracts.",
+    Status_Disposition: "Decided",
+    Date_Added: "2017-06-01",
+    Keyword: "arbitration; class action; employment",
+    Secondary_Sources: [],
+  },
+  {
+    ...MOCK_CASE,
+    Case_snug: "carpenter-v-united-states",
+    id: 3,
+    Record_Number: 1003,
+    Caption: "Carpenter v. United States",
+    Brief_Description: "Fourth Amendment and cell-site location information.",
+    Status_Disposition: "Decided",
+    Date_Added: "2018-07-01",
+    Keyword: "Fourth Amendment; privacy; cell data",
+    Secondary_Sources: [],
+  },
+];
