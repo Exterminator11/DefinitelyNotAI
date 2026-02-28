@@ -1,7 +1,7 @@
 import React from "react";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { Link } from "react-router";
-import { MessageCircleIcon } from "lucide-react";
+import { LayoutList, MessageCircleIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
@@ -38,7 +38,10 @@ function HomeHeader() {
       </Link>
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" asChild>
-          <Link to="/all">All cases</Link>
+          <Link to="/all" className="inline-flex items-center gap-2">
+            <LayoutList className="size-4" aria-hidden />
+            All cases
+          </Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
           <Link to="/chat">

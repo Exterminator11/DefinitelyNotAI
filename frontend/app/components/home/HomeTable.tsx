@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -197,6 +198,7 @@ function HomeTable({
               disabled={displayPage <= 1}
               aria-label="Previous page"
             >
+              <ChevronLeft className="size-4" aria-hidden />
               Previous
             </Button>
             <Button
@@ -207,6 +209,7 @@ function HomeTable({
               aria-label="Next page"
             >
               Next
+              <ChevronRight className="size-4" aria-hidden />
             </Button>
           </div>
         </div>
