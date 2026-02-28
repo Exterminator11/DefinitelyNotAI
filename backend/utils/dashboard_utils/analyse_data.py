@@ -207,3 +207,17 @@ def get_case_details(case_id):
         "case": case_dict,
         "secondary_sources": secondary_sources
     }
+
+
+def get_all_cases():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM cases")
+    rows = cursor.fetchall()
+    
+    columns = [col[0] for col in cursor.description]
+    cases = [dict(zip(columns, row)) for row in rows]
+    
+    conn.close()
+    return cases

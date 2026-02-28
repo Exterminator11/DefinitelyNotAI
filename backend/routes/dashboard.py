@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from utils.dashboard_utils.analyse_data import get_chart_data, get_temporal_analysis, get_case_details
+from utils.dashboard_utils.analyse_data import get_chart_data, get_temporal_analysis, get_case_details, get_all_cases
 
 router = APIRouter()
 
@@ -13,6 +13,11 @@ async def get_dashboard():
         "chart_data": chart_data,
         "temporal_data": temporal_data
     }
+
+
+@router.get("/cases")
+async def get_cases():
+    return get_all_cases()
 
 
 @router.get("/case/{case_id}")
