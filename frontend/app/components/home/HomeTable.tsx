@@ -20,6 +20,8 @@ export interface HomeTableProps {
   data: Array<Record<string, unknown>>;
   pageSizeOptions?: number[];
   defaultPageSize?: number;
+  /** When set, use this column's value (string or number) for row link to /case/:id. When unset, use Case_snug/case_snug. */
+  linkColumnKey?: string;
 }
 
 function getColumns(data: Array<Record<string, unknown>>): string[] {
@@ -64,10 +66,32 @@ function getCaseSnugColumnKey(columns: string[]): string | null {
   return key ?? null;
 }
 
+function getLinkColumnKey(
+  columns: string[],
+  linkColumnKey?: string
+): string | null {
+  if (linkColumnKey != null) {
+    const key = columns.find(
+      (c) => c === linkColumnKey || c.toLowerCase() === linkColumnKey.toLowerCase()
+    );
+    return key ?? null;
+  }
+  return getCaseSnugColumnKey(columns);
+}
+
+function getLinkValue(row: Record<string, unknown>, linkKey: string | null): string | null {
+  if (linkKey == null) return null;
+  const value = row[linkKey];
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  return null;
+}
+
 function HomeTable({
   data,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
   defaultPageSize,
+  linkColumnKey,
 }: HomeTableProps) {
   const navigate = useNavigate();
   const initialPageSize =
@@ -79,9 +103,9 @@ function HomeTable({
   const [currentPage, setCurrentPage] = useState(1);
 
   const columns = useMemo(() => getColumns(data), [data]);
-  const caseSnugKey = useMemo(
-    () => getCaseSnugColumnKey(columns),
-    [columns]
+  const resolvedLinkKey = useMemo(
+    () => getLinkColumnKey(columns, linkColumnKey),
+    [columns, linkColumnKey]
   );
   const totalRows = data.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
@@ -189,10 +213,7 @@ function HomeTable({
         </TableHeader>
         <TableBody>
           {paginatedRows.map((row, rowIndex) => {
-            const caseSnugValue =
-              caseSnugKey != null ? row[caseSnugKey] : undefined;
-            const caseId =
-              typeof caseSnugValue === "string" ? caseSnugValue : null;
+            const caseId = getLinkValue(row, resolvedLinkKey);
             const isClickable = caseId != null;
 
             return (

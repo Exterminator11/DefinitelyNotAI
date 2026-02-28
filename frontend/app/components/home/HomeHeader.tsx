@@ -1,13 +1,15 @@
 import React from "react";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { Link } from "react-router";
+import { MessageCircleIcon } from "lucide-react";
+import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
 function HomeHeader() {
   return (
     <header
       className={cn(
-        "flex flex-row items-center justify-flex-start gap-3 w-full px-6 py-4",
+        "flex flex-row items-center justify-between gap-3 w-full px-6 py-4",
         "border border-border/60 bg-card/40 backdrop-blur-sm",
         "shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset] md:px-24",
       )}
@@ -34,6 +36,19 @@ function HomeHeader() {
           </span>
         </div>
       </Link>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/all">
+            All cases
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/chat">
+            <MessageCircleIcon className="size-4" aria-hidden />
+            Chat
+          </Link>
+        </Button>
+      </div>
     </header>
   );
 }

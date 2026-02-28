@@ -10,7 +10,7 @@ import FolderOpen from "@mui/icons-material/FolderOpen";
 import LinkIcon from "@mui/icons-material/Link";
 import Assessment from "@mui/icons-material/Assessment";
 import Place from "@mui/icons-material/Place";
-import { getRequest } from "../api/baseApi";
+import { getCase } from "~/api/case";
 import { MOCK_CASE } from "~/mocks/case";
 import type { SingleCaseType } from "~/types/case";
 import {
@@ -38,8 +38,8 @@ export async function loader({
   params: { id?: string };
 }): Promise<{ case: SingleCaseType }> {
   try {
-    const caseData = await getRequest<SingleCaseType>(`/cases/${params.id ?? ""}`);
-    return { case: caseData };
+    const caseData = await getCase(params.id ?? "");
+    return { case: caseData as SingleCaseType };
   } catch {
     return { case: MOCK_CASE as SingleCaseType };
   }
