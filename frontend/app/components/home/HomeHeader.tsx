@@ -38,9 +38,7 @@ function HomeHeader() {
       </Link>
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" asChild>
-          <Link to="/all">
-            All cases
-          </Link>
+          <Link to="/all">All cases</Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
           <Link to="/chat">

@@ -15,6 +15,7 @@ const CASE_SNUG_COLUMN_KEY = "Case_snug";
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 10;
+const MAX_CELL_TEXT_LENGTH = 100;
 
 export interface HomeTableProps {
   data: Array<Record<string, unknown>>;
@@ -48,7 +49,11 @@ function formatColumnLabel(key: string): string {
 function formatCellValue(value: unknown): string {
   if (value === null || value === undefined) return "";
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value);
+    const str = String(value);
+    if (str.length > MAX_CELL_TEXT_LENGTH) {
+      return `${str.slice(0, MAX_CELL_TEXT_LENGTH)}…`;
+    }
+    return str;
   }
   if (Array.isArray(value)) {
     return value.length === 0 ? "[]" : `[${value.length} items]`;
@@ -56,7 +61,11 @@ function formatCellValue(value: unknown): string {
   if (typeof value === "object") {
     return Object.keys(value).length === 0 ? "{}" : "[Object]";
   }
-  return String(value);
+  const str = String(value);
+  if (str.length > MAX_CELL_TEXT_LENGTH) {
+    return `${str.slice(0, MAX_CELL_TEXT_LENGTH)}…`;
+  }
+  return str;
 }
 
 function getCaseSnugColumnKey(columns: string[]): string | null {

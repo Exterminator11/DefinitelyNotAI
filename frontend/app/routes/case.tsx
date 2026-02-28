@@ -12,7 +12,10 @@ import Assessment from "@mui/icons-material/Assessment";
 import Place from "@mui/icons-material/Place";
 import { getCase } from "~/api/case";
 import { MOCK_CASE } from "~/mocks/case";
-import type { SingleCaseType } from "~/types/case";
+import type {
+  SingleCaseType,
+  SingleCaseSecondarySourceType,
+} from "~/types/case";
 import {
   Card,
   CardContent,
@@ -32,15 +35,101 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+/** Format API date string (e.g. "2021-01-30 00:00:00") to readable form for consistent SSR/client output. */
+function formatDate(value: string | null | undefined): string {
+  if (value == null || value === "") return "";
+  const date = new Date(value.replace(" ", "T"));
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/** Parse list field from API: may be array, or string with "','" separators and single quotes. */
+function parseListField(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((v) => String(v).replace(/^'|'$/g, "").trim())
+      .filter(Boolean);
+  }
+  if (value == null || value === "") return [];
+  const str = String(value).trim();
+  if (!str) return [];
+  const parts = str
+    .split("','")
+    .map((s) => s.replace(/^'|'$/g, "").trim())
+    .filter(Boolean);
+  return parts.length > 0
+    ? parts
+    : [str.replace(/^'|'$/g, "").trim()].filter(Boolean);
+}
+
+function normalizeCaseResponse(raw: unknown): SingleCaseType {
+  let payload: Record<string, unknown>;
+  let secondarySources: unknown[] | undefined;
+
+  if (raw && typeof raw === "object" && "case" in raw) {
+    const wrapped = raw as {
+      case: Record<string, unknown>;
+      secondary_sources?: unknown[];
+    };
+    payload = { ...wrapped.case };
+    secondarySources = wrapped.secondary_sources;
+  } else {
+    payload = raw as Record<string, unknown>;
+  }
+
+  const listFieldKeys = [
+    "Area_of_Application_List",
+    "Issue_List",
+    "Cause_of_Action_List",
+    "Issue_List_OLD",
+    "Name_of_Algorithm_List",
+    "Class_Action_list",
+    "Jurisdiction_Type",
+  ];
+  for (const key of listFieldKeys) {
+    if (key in payload) payload[key] = parseListField(payload[key]);
+  }
+  if (secondarySources !== undefined) {
+    payload.Secondary_Sources = (
+      secondarySources as Record<string, unknown>[]
+    ).map(
+      (s) =>
+        ({
+          id: s.id ?? 0,
+          Case_Number: s.Case_Number ?? s.case_number ?? "",
+          Secondary_Source_Link:
+            s.Secondary_Source_Link ?? s.secondary_source_link ?? "",
+          Secondary_Source_Title:
+            s.Secondary_Source_Title ?? s.secondary_source_title ?? "",
+        }) as SingleCaseSecondarySourceType,
+    );
+  }
+
+  return payload as unknown as SingleCaseType;
+}
+
 export async function loader({
   params,
 }: {
   params: { id?: string };
 }): Promise<{ case: SingleCaseType }> {
   try {
-    const caseData = await getCase(params.id ?? "");
-    return { case: caseData as SingleCaseType };
-  } catch {
+    const raw = await getCase(params.id ?? "");
+    if (
+      raw &&
+      typeof raw === "object" &&
+      "case" in raw &&
+      (raw as { case: unknown }).case === null
+    ) {
+      throw new Response(null, { status: 404 });
+    }
+    return { case: normalizeCaseResponse(raw) };
+  } catch (error) {
+    if (error instanceof Response) throw error;
     return { case: MOCK_CASE as SingleCaseType };
   }
 }
@@ -50,28 +139,20 @@ function SingleCasePage() {
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
 
-  if (isLoading) {
-    return (
-      <div className="w-full max-w-6xl px-4 md:px-8 py-8 flex items-center justify-center min-h-[40vh]">
-        <p className="text-muted-foreground">Loading case…</p>
-      </div>
-    );
-  }
-
   const secondarySources = caseData.Secondary_Sources ?? [];
 
   return (
-    <div className="w-full max-w-6xl px-4 md:px-8 py-6 space-y-6">
+    <div className="w-full max-w-6xl px-4 md:px-8 py-6 space-y-6 relative">
+      {isLoading && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[1px] rounded-lg"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <p className="text-muted-foreground text-sm">Loading case…</p>
+        </div>
+      )}
       <div className="flex flex-col gap-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowBack sx={{ fontSize: 18 }} />
-            Back to home
-          </Link>
-        </Button>
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
           {caseData.Caption}
         </h1>
@@ -121,7 +202,7 @@ function SingleCasePage() {
                   Most recent activity
                   {caseData.Most_Recent_Activity_Date && (
                     <span className="ml-2 text-muted-foreground font-normal">
-                      ({caseData.Most_Recent_Activity_Date})
+                      ({formatDate(caseData.Most_Recent_Activity_Date)})
                     </span>
                   )}
                 </h4>
@@ -177,7 +258,7 @@ function SingleCasePage() {
                 />
                 <span className="text-muted-foreground">Filed:</span>
                 <span className="text-foreground">
-                  {caseData.Date_Action_Filed}
+                  {formatDate(caseData.Date_Action_Filed)}
                 </span>
               </div>
             )}
@@ -205,9 +286,9 @@ function SingleCasePage() {
             )}
             {(caseData.Date_Added || caseData.Last_Update) && (
               <div className="pt-2 text-xs text-muted-foreground">
-                Added: {caseData.Date_Added}
+                Added: {formatDate(caseData.Date_Added)}
                 {caseData.Last_Update &&
-                  ` · Last update: ${caseData.Last_Update}`}
+                  ` · Last update: ${formatDate(caseData.Last_Update)}`}
               </div>
             )}
           </CardContent>
@@ -316,9 +397,9 @@ function SingleCasePage() {
               </p>
             ) : (
               <ul className="space-y-3">
-                {secondarySources.map((source) => (
+                {secondarySources.map((source, index) => (
                   <li
-                    key={source.id}
+                    key={source.id ?? index}
                     className={cn(
                       "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/50 transition-colors",
                     )}

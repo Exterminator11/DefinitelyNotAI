@@ -1,5 +1,6 @@
 import { useLoaderData, useNavigation } from "react-router";
 import type { Route } from "./+types/all";
+import { LayoutList } from "lucide-react";
 import { getCases } from "~/api/case";
 import HomeTable from "~/components/home/HomeTable";
 import { Spinner } from "~/components/ui/spinner";
@@ -30,9 +31,12 @@ export default function AllCasesPage() {
 
   return (
     <div className="flex w-full max-w-full flex-1 flex-col gap-6 px-4 md:px-24">
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-        All Cases
-      </h1>
+      <div className="flex items-center gap-2">
+        <LayoutList className="size-7 text-primary" aria-hidden />
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          All Cases
+        </h1>
+      </div>
       {isLoading ? (
         <div className="flex min-h-[200px] w-full items-center justify-center">
           <Spinner className="size-8" />
