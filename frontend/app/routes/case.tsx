@@ -10,7 +10,7 @@ import FolderOpen from "@mui/icons-material/FolderOpen";
 import LinkIcon from "@mui/icons-material/Link";
 import Assessment from "@mui/icons-material/Assessment";
 import Place from "@mui/icons-material/Place";
-import { getRequest } from "../../api/baseApi";
+import { getRequest } from "../api/baseApi";
 import { MOCK_CASE } from "~/mocks/case";
 import type { SingleCaseType } from "~/types/case";
 import {
@@ -38,10 +38,10 @@ export async function loader({
   params: { id?: string };
 }): Promise<{ case: SingleCaseType }> {
   // Mock request: real API will use getCase(params.id) later
-  const caseData = await getRequest(
+  const caseData = (await getRequest(
     `/cases/${params.id ?? ""}`,
     MOCK_CASE,
-  ) as SingleCaseType;
+  )) as SingleCaseType;
   return { case: caseData };
 }
 
@@ -145,16 +145,23 @@ function SingleCasePage() {
           <CardContent className="space-y-3">
             {(caseData.Jurisdiction_Filed || caseData.Current_Jurisdiction) && (
               <div className="flex items-start gap-2">
-                <Place sx={{ fontSize: 16 }} className="text-muted-foreground mt-0.5 shrink-0" />
+                <Place
+                  sx={{ fontSize: 16 }}
+                  className="text-muted-foreground mt-0.5 shrink-0"
+                />
                 <div className="text-sm">
                   {caseData.Jurisdiction_Name && (
                     <p className="font-medium text-foreground">
                       {caseData.Jurisdiction_Name}
                     </p>
                   )}
-                  {(caseData.Jurisdiction_Filed || caseData.Current_Jurisdiction) && (
+                  {(caseData.Jurisdiction_Filed ||
+                    caseData.Current_Jurisdiction) && (
                     <p className="text-muted-foreground">
-                      {[caseData.Jurisdiction_Filed, caseData.Current_Jurisdiction]
+                      {[
+                        caseData.Jurisdiction_Filed,
+                        caseData.Current_Jurisdiction,
+                      ]
                         .filter(Boolean)
                         .join(" → ")}
                     </p>
@@ -164,21 +171,34 @@ function SingleCasePage() {
             )}
             {caseData.Date_Action_Filed && (
               <div className="flex items-center gap-2 text-sm">
-                <CalendarToday sx={{ fontSize: 16 }} className="text-muted-foreground shrink-0" />
+                <CalendarToday
+                  sx={{ fontSize: 16 }}
+                  className="text-muted-foreground shrink-0"
+                />
                 <span className="text-muted-foreground">Filed:</span>
-                <span className="text-foreground">{caseData.Date_Action_Filed}</span>
+                <span className="text-foreground">
+                  {caseData.Date_Action_Filed}
+                </span>
               </div>
             )}
             {caseData.Status_Disposition && (
               <div className="flex items-center gap-2 text-sm">
-                <Assessment sx={{ fontSize: 16 }} className="text-muted-foreground shrink-0" />
+                <Assessment
+                  sx={{ fontSize: 16 }}
+                  className="text-muted-foreground shrink-0"
+                />
                 <span className="text-muted-foreground">Status:</span>
-                <span className="text-foreground">{caseData.Status_Disposition}</span>
+                <span className="text-foreground">
+                  {caseData.Status_Disposition}
+                </span>
               </div>
             )}
             {caseData.Researcher && (
               <div className="flex items-center gap-2 text-sm">
-                <Person sx={{ fontSize: 16 }} className="text-muted-foreground shrink-0" />
+                <Person
+                  sx={{ fontSize: 16 }}
+                  className="text-muted-foreground shrink-0"
+                />
                 <span className="text-muted-foreground">Researcher:</span>
                 <span className="text-foreground">{caseData.Researcher}</span>
               </div>
@@ -186,7 +206,8 @@ function SingleCasePage() {
             {(caseData.Date_Added || caseData.Last_Update) && (
               <div className="pt-2 text-xs text-muted-foreground">
                 Added: {caseData.Date_Added}
-                {caseData.Last_Update && ` · Last update: ${caseData.Last_Update}`}
+                {caseData.Last_Update &&
+                  ` · Last update: ${caseData.Last_Update}`}
               </div>
             )}
           </CardContent>
@@ -199,7 +220,9 @@ function SingleCasePage() {
               <Assessment sx={{ fontSize: 20 }} className="text-primary" />
               <CardTitle>Classifications</CardTitle>
             </div>
-            <CardDescription>Areas, issues, causes of action, algorithms</CardDescription>
+            <CardDescription>
+              Areas, issues, causes of action, algorithms
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {caseData.Area_of_Application_List?.length > 0 && (
