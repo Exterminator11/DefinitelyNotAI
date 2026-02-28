@@ -236,16 +236,69 @@ def _build_column_value_counts(cursor, column_name, rows, column_index):
     }
 
 
-def get_all_cases():
+def get_all_cases(filters=None):
+    """
+    Return cases, optionally filtered. When filters is None or empty, also return
+    columns and date_columns. When filters are present, return only cases.
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
-    cursor.execute("SELECT * FROM cases")
-    rows = cursor.fetchall()
-    
+    has_filters = filters and len(filters) > 0
+
+    if not has_filters:
+        cursor.execute("SELECT * FROM cases")
+        rows = cursor.fetchall()
+    else:
+        # Build WHERE for date columns only (column names from DATE_COLUMNS)
+        where_parts = []
+        params = []
+        for col in DATE_COLUMNS:
+            start_key = f"{col}_start"
+            end_key = f"{col}_end"
+            start_val = filters.get(start_key)
+            end_val = filters.get(end_key)
+            if start_val:
+                where_parts.append(f'"{col}" >= ?')
+                params.append(start_val)
+            if end_val:
+                where_parts.append(f'"{col}" <= ?')
+                params.append(end_val)
+        sql = "SELECT * FROM cases"
+        if where_parts:
+            sql += " WHERE " + " AND ".join(where_parts)
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+
+        # Filter list-type columns in Python (cell contains any of selected values)
+        list_filters = {
+            k: v for k, v in filters.items()
+            if k in COLUMNS and isinstance(v, list) and len(v) > 0
+        }
+        if list_filters:
+            column_names = [col[0] for col in cursor.description]
+            col_indices = {name: idx for idx, name in enumerate(column_names)}
+            filtered_rows = []
+            for row in rows:
+                keep = True
+                for col_name, selected_vals in list_filters.items():
+                    idx = col_indices.get(col_name)
+                    if idx is None:
+                        continue
+                    cell_vals = set(clean_value(row[idx]))
+                    if not cell_vals.intersection(set(selected_vals)):
+                        keep = False
+                        break
+                if keep:
+                    filtered_rows.append(row)
+            rows = filtered_rows
+
     column_names = [col[0] for col in cursor.description]
     cases = [dict(zip(column_names, row)) for row in rows]
-    
+
+    if has_filters:
+        conn.close()
+        return {"cases": cases}
+
     columns = {}
     for idx, col_name in enumerate(column_names):
         if col_name.lower() in COLUMNS_EXCLUDED_FROM_FILTERS:
@@ -255,8 +308,6 @@ def get_all_cases():
         columns[col_name] = _build_column_value_counts(
             cursor, col_name, rows, idx
         )
-
     date_columns = [c for c in DATE_COLUMNS if c in column_names]
-
     conn.close()
     return {"cases": cases, "columns": columns, "date_columns": date_columns}

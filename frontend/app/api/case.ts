@@ -7,18 +7,27 @@ export type ColumnsMap = Record<
 
 export type GetCasesResponse = {
   cases: Array<Record<string, unknown>>;
-  columns: ColumnsMap;
-  date_columns: string[];
+  columns?: ColumnsMap;
+  date_columns?: string[];
 };
 
-export async function getCases(): Promise<GetCasesResponse> {
-  const response = await getRequest<GetCasesResponse | Array<Record<string, unknown>>>("/cases");
+export async function getCases(
+  searchParams?: string | URLSearchParams
+): Promise<GetCasesResponse> {
+  const query =
+    typeof searchParams === "string"
+      ? searchParams
+      : searchParams?.toString();
+  const path = query ? `/cases?${query}` : "/cases";
+  const response = await getRequest<
+    GetCasesResponse | Array<Record<string, unknown>>
+  >(path);
   if (Array.isArray(response)) {
     return { cases: response, columns: {}, date_columns: [] };
   }
   return {
     cases: response.cases,
-    columns: response.columns,
+    columns: response.columns ?? {},
     date_columns: response.date_columns ?? [],
   };
 }
