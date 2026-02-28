@@ -29,9 +29,23 @@ export interface SendPromptResult {
   hash: string;
 }
 
+export interface AgentProcessChartData {
+  labels: string[];
+  data: number[];
+}
+
+export interface AgentProcessResponse {
+  crew: string;
+  query: string;
+  data?: AgentProcessChartData;
+  text?: string;
+  error?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content?: string;
   imageBase64?: string;
+  chartData?: AgentProcessChartData;
 }

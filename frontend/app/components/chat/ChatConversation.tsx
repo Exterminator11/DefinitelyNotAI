@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
+import { Loader2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import {
   Conversation,
@@ -21,12 +22,9 @@ import {
   PromptInputTextarea,
 } from "~/components/ai-elements/prompt-input";
 import { Shimmer } from "~/components/ai-elements/shimmer";
+import { BarChartFromEntry } from "~/components/charts/BarChartFromEntry";
 import type { ChatMessage } from "~/types/chat";
-import {
-  sendPrompt,
-  getChatResponse,
-  CHAT_POLL_INTERVAL,
-} from "../../api/chat";
+import { processAgentQuery } from "../../api/chat";
 
 function toDataUrl(content: string): string {
   if (content.startsWith("data:")) return content;
@@ -39,61 +37,9 @@ export default function ChatConversation() {
     ?.initialPrompt;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [pendingHash, setPendingHash] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialSentRef = useRef(false);
-
-  const pollOnce = useCallback(async (hash: string) => {
-    try {
-      const result = await getChatResponse(hash);
-      if (result.status === "ready") {
-        setPendingHash(null);
-        if (pollRef.current) {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
-        }
-        const response = result.response;
-        const id = nanoid();
-        if (response.type === "text") {
-          setMessages((prev) => [
-            ...prev,
-            { id, role: "assistant", content: response.content },
-          ]);
-        } else {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id,
-              role: "assistant",
-              imageBase64: response.content,
-            },
-          ]);
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to get response");
-      setPendingHash(null);
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!pendingHash) return;
-    pollOnce(pendingHash);
-    pollRef.current = setInterval(() => {
-      pollOnce(pendingHash);
-    }, CHAT_POLL_INTERVAL);
-    return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-    };
-  }, [pendingHash, pollOnce]);
 
   const handleSend = useCallback(async (payload: { text: string }) => {
     const text = payload.text?.trim();
@@ -105,11 +51,30 @@ export default function ChatConversation() {
       content: text,
     };
     setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
     try {
-      const { hash } = await sendPrompt(text);
-      setPendingHash(hash);
+      const response = await processAgentQuery(text);
+      const id = nanoid();
+      const hasChart =
+        response.data &&
+        Array.isArray(response.data.labels) &&
+        Array.isArray(response.data.data) &&
+        response.data.labels.length > 0;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id,
+          role: "assistant",
+          ...(response.text && { content: response.text }),
+          ...(hasChart && { chartData: response.data }),
+        },
+      ]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send prompt");
+      setError(
+        err instanceof Error ? err.message : "Failed to process query",
+      );
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -123,7 +88,7 @@ export default function ChatConversation() {
     <div className="flex h-full w-full max-w-4xl flex-1 flex-col overflow-hidden">
       <Conversation className="min-h-0 flex-1">
         <ConversationContent>
-          {messages.length === 0 && !pendingHash && (
+          {messages.length === 0 && !isLoading && (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 py-12 text-center text-muted-foreground">
               <p className="text-sm">
                 Send a message to start the conversation.
@@ -135,22 +100,44 @@ export default function ChatConversation() {
               <MessageContent>
                 {msg.role === "user" ? (
                   <MessageResponse>{msg.content}</MessageResponse>
-                ) : msg.imageBase64 ? (
-                  <img
-                    src={toDataUrl(msg.imageBase64)}
-                    alt="Assistant response"
-                    className="max-h-80 max-w-full rounded-lg object-contain"
-                  />
                 ) : (
-                  <MessageResponse>{msg.content ?? ""}</MessageResponse>
+                  <>
+                    {msg.content != null && msg.content !== "" && (
+                      <MessageResponse>{msg.content}</MessageResponse>
+                    )}
+                    {msg.chartData && (
+                      <div className="mt-2">
+                        <BarChartFromEntry
+                          entry={msg.chartData}
+                          title={undefined}
+                        />
+                      </div>
+                    )}
+                    {msg.imageBase64 && (
+                      <img
+                        src={toDataUrl(msg.imageBase64)}
+                        alt="Assistant response"
+                        className="max-h-80 max-w-full rounded-lg object-contain"
+                      />
+                    )}
+                    {msg.role === "assistant" &&
+                      !msg.content &&
+                      !msg.chartData &&
+                      !msg.imageBase64 && (
+                        <MessageResponse>No response.</MessageResponse>
+                      )}
+                  </>
                 )}
               </MessageContent>
             </Message>
           ))}
-          {pendingHash && (
+          {isLoading && (
             <Message from="assistant">
               <MessageContent>
-                <Shimmer className="text-muted-foreground">Thinking...</Shimmer>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  <Shimmer>Thinking...</Shimmer>
+                </div>
               </MessageContent>
             </Message>
           )}
@@ -167,11 +154,11 @@ export default function ChatConversation() {
           <PromptInputBody>
             <PromptInputTextarea
               placeholder="Message..."
-              disabled={!!pendingHash}
+              disabled={isLoading}
             />
             <PromptInputFooter>
               <PromptInputSubmit
-                status={pendingHash ? "submitted" : undefined}
+                status={isLoading ? "submitted" : undefined}
               />
             </PromptInputFooter>
           </PromptInputBody>
