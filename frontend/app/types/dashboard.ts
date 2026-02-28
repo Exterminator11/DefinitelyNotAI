@@ -28,8 +28,8 @@ export interface Staleness {
 
 export interface LifecycleSummary {
   total_cases: number;
-  earliest_filing: string;
-  latest_activity: string;
+  earliest_filing: string | null;
+  latest_activity: string | null;
   cases_with_dates: number;
 }
 

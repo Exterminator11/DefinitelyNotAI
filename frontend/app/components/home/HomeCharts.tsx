@@ -236,9 +236,10 @@ function StalenessChart({ data: staleness }: { data: Staleness }) {
 
 const CHART_MIN_HEIGHT = 250;
 
-function formatReadableDate(dateStr: string): string {
+function formatReadableDate(dateStr: string | null | undefined): string {
+  if (dateStr == null || String(dateStr).trim() === "") return "—";
   const date = new Date(dateStr.replace(" ", "T"));
-  if (Number.isNaN(date.getTime())) return dateStr;
+  if (Number.isNaN(date.getTime())) return String(dateStr);
   const day = date.getDate();
   const ordinal =
     day % 10 === 1 && day !== 11

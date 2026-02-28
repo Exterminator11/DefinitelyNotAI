@@ -10,14 +10,14 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
-    server: {
-      proxy: {
-        "/api": {
-          target: proxyTarget,
-          changeOrigin: true,
-          secure: true,
-        },
-      },
-    },
+    // server: {
+    //   proxy: {
+    //     "/api": {
+    //       target: proxyTarget,
+    //       changeOrigin: true,
+    //       secure: true,
+    //     },
+    //   },
+    // },
   };
 });
