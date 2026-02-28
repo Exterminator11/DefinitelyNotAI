@@ -1,13 +1,19 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import HomeHeader from "~/components/home/HomeHeader";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "DAIL Assistant" },
+    { name: "description", content: "Welcome to DAIL Assistant!" },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return (
+    <main className="flex items-center justify-center pt-16 pb-4">
+      <div className="flex-1 flex flex-col items-center gap-16 min-h-0 ">
+        <HomeHeader />
+      </div>
+    </main>
+  );
 }
