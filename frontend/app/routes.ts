@@ -5,4 +5,5 @@ export default [
   route("all", "routes/all.tsx"),
   route("chat", "routes/chat.tsx"),
   route("case/:id", "routes/case.tsx"),
+  route("*", "routes/$.tsx"),
 ] satisfies RouteConfig;
