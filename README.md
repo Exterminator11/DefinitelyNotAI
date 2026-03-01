@@ -129,3 +129,5 @@ DefinitelyNotAI/
 3. **Case Details** - Click on any case to see full details
 4. **Diagrams** - Apply filters and generate custom visualizations
 5. **Chat** - Have a conversation with the AI about case data
+
+Demo link - [text](https://youtu.be/ZZODOC6-SHU)
