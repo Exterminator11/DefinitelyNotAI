@@ -130,4 +130,9 @@ DefinitelyNotAI/
 4. **Diagrams** - Apply filters and generate custom visualizations
 5. **Chat** - Have a conversation with the AI about case data
 
+
+## Use of AI
+We used AI coding tools including OpenCode and Cursor alongside writing code ourselves, and leveraged Claude, Gemini, and ChatGPT for research throughout the process.
+
+
 Demo link - [Demo video OpenDAIL](https://youtu.be/ZZODOC6-SHU)
