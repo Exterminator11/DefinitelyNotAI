@@ -130,4 +130,4 @@ DefinitelyNotAI/
 4. **Diagrams** - Apply filters and generate custom visualizations
 5. **Chat** - Have a conversation with the AI about case data
 
-Demo link - [text](https://youtu.be/ZZODOC6-SHU)
+Demo link - [Demo video OpenDAIL](https://youtu.be/ZZODOC6-SHU)
