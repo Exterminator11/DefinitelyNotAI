@@ -3,7 +3,11 @@ from collections import Counter
 import os
 from datetime import datetime, timedelta
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "setup", "ai_litigation.db")
+DB_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    "setup",
+    "ai_litigation.db",
+)
 
 COLUMNS = [
     "Area_of_Application_List",
@@ -11,18 +15,25 @@ COLUMNS = [
     "Issue_List_OLD",
     "Name_of_Algorithm_List",
     "Class_Action_list",
-    "Jurisdiction_Type"
+    "Jurisdiction_Type",
 ]
 
 DATE_COLUMNS = [
     "Date_Action_Filed",
     "Date_Added",
     "Last_Update",
-    "Most_Recent_Activity_Date"
+    "Most_Recent_Activity_Date",
 ]
 
 # Columns unique per case; excluded from filter/column value counts.
-COLUMNS_EXCLUDED_FROM_FILTERS = {"id", "case_snug", "record_number", "caption", "brief_description", "summary_of_significance"}
+COLUMNS_EXCLUDED_FROM_FILTERS = {
+    "id",
+    "case_snug",
+    "record_number",
+    "caption",
+    "brief_description",
+    "summary_of_significance",
+}
 
 
 def clean_value(val):
@@ -88,7 +99,7 @@ def get_chart_data(filters=None):
 
         result[column] = {
             "labels": [item[0] for item in sorted_items],
-            "data": [item[1] for item in sorted_items]
+            "data": [item[1] for item in sorted_items],
         }
 
     conn.close()
@@ -128,7 +139,11 @@ def _temporal_analysis_from_cases(cases):
             dates_filed.append(date_filed)
         if date_activity is not None:
             dates_activity.append(date_activity)
-        if date_filed is not None and date_activity is not None and date_activity >= date_filed:
+        if (
+            date_filed is not None
+            and date_activity is not None
+            and date_activity >= date_filed
+        ):
             velocity_days.append((date_activity - date_filed).days)
         if last_update is not None:
             if last_update < stale_cutoff:
@@ -159,7 +174,11 @@ def _temporal_analysis_from_cases(cases):
             distribution["5+ years"] += 1
     velocity_distribution = [(b, distribution[b]) for b in bucket_order]
 
-    stale_pct = round((staleness_dict["stale"] / total_cases) * 100, 1) if total_cases > 0 else 0
+    stale_pct = (
+        round((staleness_dict["stale"] / total_cases) * 100, 1)
+        if total_cases > 0
+        else 0
+    )
     earliest = min(dates_filed) if dates_filed else None
     latest = max(dates_activity) if dates_activity else None
     earliest_str = earliest.isoformat() if earliest else None
@@ -214,7 +233,7 @@ def get_temporal_analysis(filters=None):
         ORDER BY year
     """)
     filing_trends = cursor.fetchall()
-    
+
     cursor.execute("""
         SELECT 
             AVG(julianday(Most_Recent_Activity_Date) - julianday(Date_Action_Filed)) as avg_days,
@@ -278,12 +297,16 @@ def get_temporal_analysis(filters=None):
         else:
             staleness_dict["stale"] = count
 
-    stale_pct = round((staleness_dict["stale"] / total_cases) * 100, 1) if total_cases > 0 else 0
+    stale_pct = (
+        round((staleness_dict["stale"] / total_cases) * 100, 1)
+        if total_cases > 0
+        else 0
+    )
 
     return {
         "filing_trends": {
             "labels": [str(row[0]) for row in filing_trends],
-            "data": [row[1] for row in filing_trends]
+            "data": [row[1] for row in filing_trends],
         },
         "litigation_velocity": {
             "average_days": round(velocity_stats[0], 1) if velocity_stats[0] else 0,
@@ -291,49 +314,51 @@ def get_temporal_analysis(filters=None):
             "max_days": round(velocity_stats[2], 1) if velocity_stats[2] else 0,
             "distribution": {
                 "labels": [row[0] for row in velocity_distribution],
-                "data": [row[1] for row in velocity_distribution]
-            }
+                "data": [row[1] for row in velocity_distribution],
+            },
         },
         "staleness": {
             "active": staleness_dict["active"],
             "stale": staleness_dict["stale"],
-            "stale_percentage": stale_pct
+            "stale_percentage": stale_pct,
         },
         "lifecycle_summary": {
             "total_cases": total_cases,
             "earliest_filing": lifecycle[0] if lifecycle[0] else None,
             "latest_activity": lifecycle[1] if lifecycle[1] else None,
-            "cases_with_dates": lifecycle[2] if lifecycle[2] else 0
-        }
+            "cases_with_dates": lifecycle[2] if lifecycle[2] else 0,
+        },
     }
 
 
 def get_case_details(case_id):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
+
     cursor.execute("SELECT * FROM cases WHERE Record_Number = ?", (case_id,))
     case = cursor.fetchone()
-    
+
     if not case:
         conn.close()
         return {"case": None, "secondary_sources": []}
-    
+
     case_columns = [col[0] for col in cursor.description]
     case_dict = dict(zip(case_columns, case))
-    
+
     cursor.execute("SELECT * FROM secondary_sources WHERE Case_Number = ?", (case_id,))
     sources = cursor.fetchall()
-    
+
     conn.close()
-    
-    source_columns = ["id", "Case_Number", "Secondary_Source_Link", "Secondary_Source_Title"]
+
+    source_columns = [
+        "id",
+        "Case_Number",
+        "Secondary_Source_Link",
+        "Secondary_Source_Title",
+    ]
     secondary_sources = [dict(zip(source_columns, row)) for row in sources]
-    
-    return {
-        "case": case_dict,
-        "secondary_sources": secondary_sources
-    }
+
+    return {"case": case_dict, "secondary_sources": secondary_sources}
 
 
 def _build_column_value_counts(cursor, column_name, rows, column_index):
@@ -395,7 +420,8 @@ def get_all_cases(filters=None):
 
         # Filter list-type columns in Python (cell contains any of selected values)
         list_filters = {
-            k: v for k, v in filters.items()
+            k: v
+            for k, v in filters.items()
             if k in COLUMNS and isinstance(v, list) and len(v) > 0
         }
         if list_filters:
@@ -436,9 +462,7 @@ def get_all_cases(filters=None):
             continue
         if col_name not in COLUMNS:
             continue
-        columns[col_name] = _build_column_value_counts(
-            cursor, col_name, rows, idx
-        )
+        columns[col_name] = _build_column_value_counts(cursor, col_name, rows, idx)
     date_columns = [c for c in DATE_COLUMNS if c in column_names]
     conn.close()
     return {"cases": cases, "columns": columns, "date_columns": date_columns}

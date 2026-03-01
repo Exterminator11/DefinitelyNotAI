@@ -1,46 +1,18 @@
 import sqlite3
 import os
-import pandas as pd
-from crewai.tools import tool
+import json
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "setup", "ai_litigation.db")
+DB_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    "setup",
+    "ai_litigation.db",
+)
 
-DATA_BUFFER_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data_buffer.csv")
-
-
-@tool("execute_sql")
-def execute_sql(query: str) -> str:
-    """Execute a SQL query against the ai_litigation.db database and return the results as a formatted string."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    try:
-        cursor.execute(query)
-        rows = cursor.fetchall()
-        columns = [desc[0] for desc in cursor.description] if cursor.description else []
-        
-        if not rows:
-            return "No results found."
-        
-        df = pd.DataFrame(rows, columns=columns)
-        df.to_csv(DATA_BUFFER_PATH, index=False)
-        
-        header = " | ".join(columns)
-        result_lines = [header]
-        for row in rows[:10]:
-            result_lines.append(" | ".join(str(v) for v in row))
-        
-        result_str = "\n".join(result_lines)
-        return f"Results ({len(rows)} rows):\n{result_str}\n\nData saved to data_buffer.csv"
-    
-    except Exception as e:
-        return f"Error executing query: {str(e)}"
-    
-    finally:
-        conn.close()
+SQL_RESULTS_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "sql_results.json"
+)
 
 
-@tool("get_schema")
 def get_schema() -> str:
     """Get the schema of the cases table for reference."""
     schema = {
@@ -80,14 +52,65 @@ def get_schema() -> str:
             "Most_Recent_Activity": "TEXT",
             "Most_Recent_Activity_Date": "TIMESTAMP",
             "Keyword": "TEXT",
-            "Jurisdiction_Type_Text": "TEXT"
+            "Jurisdiction_Type_Text": "TEXT",
         }
     }
-    
+
     lines = ["Database Schema:", "=" * 50]
     for table, cols in schema.items():
         lines.append(f"\nTable: {table}")
         for col, dtype in cols.items():
             lines.append(f"  - {col}: {dtype}")
-    
+
     return "\n".join(lines)
+
+
+def execute_sql(query: str) -> dict:
+    """Execute a SQL query against the ai_litigation.db database and return results as dict."""
+    print(f"\n>>> execute_sql called with query: {query}")
+    print(f">>> DB_PATH: {DB_PATH}")
+    print(f">>> SQL_RESULTS_FILE: {SQL_RESULTS_FILE}")
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        print("\n\n\n\n")
+        print(rows)
+        print("\n\n\n\n")
+        columns = [desc[0] for desc in cursor.description] if cursor.description else []
+
+        print(f">>> Query returned {len(rows)} rows")
+
+        if not rows:
+            return {"columns": [], "rows": [], "message": "No results found."}
+
+        result = {"columns": columns, "rows": [list(row) for row in rows]}
+
+        with open(SQL_RESULTS_FILE, "w") as f:
+            json.dump(result, f)
+
+        print(f">>> File written to {SQL_RESULTS_FILE}")
+        return result
+
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        return {"error": str(e)}
+
+    finally:
+        conn.close()
+
+
+def read_sql_results() -> dict:
+    """Read the SQL results from the JSON file."""
+    if not os.path.exists(SQL_RESULTS_FILE):
+        return {"error": "No data file found"}
+
+    with open(SQL_RESULTS_FILE, "r") as f:
+        data = json.load(f)
+
+    return data
