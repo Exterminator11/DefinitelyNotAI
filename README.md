@@ -1,11 +1,11 @@
-# DAIL Assistant
+# OpenDAIL
 
-DAIL (Defensive AI Litigation) Assistant is a full-stack web application for analyzing and exploring AI litigation cases. It combines a FastAPI backend with a React frontend to provide AI-powered querying, interactive charts, and comprehensive case management.
+OpenDAIL is a web application for analyzing and exploring AI litigation cases from the DAIL database. It combines a FastAPI backend with a React frontend to provide AI-powered querying, interactive charts, and comprehensive case management.
 
 ## Features
 
 ### AI-Powered Query Interface
-- Natural language to SQL conversion using Ollama LLM
+- Natural language to SQL conversion using Ollama LLM(Uses gpt oss 120B which is open source)
 - Ask questions about case data in plain English
 - Automatic SQL query generation and execution
 - Results transformed into chart-ready formats
