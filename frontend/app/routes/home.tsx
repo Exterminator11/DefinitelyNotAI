@@ -1,11 +1,11 @@
+import { useState } from "react";
 import { useLoaderData, useNavigation } from "react-router";
 import type { Route } from "./+types/home";
 import { getDashboard } from "~/api/home";
 import HomeCharts from "~/components/home/HomeCharts";
 import HomePrompt from "~/components/home/HomePrompt";
-import HomeTable from "~/components/home/HomeTable";
+import DiagramsSearch from "~/components/home/DiagramsSearch";
 import { Spinner } from "~/components/ui/spinner";
-import { MOCK_CASES } from "~/mocks/case";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -30,24 +30,27 @@ export default function Home() {
   const { dashboard, dashboardError } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
+  const [hasSearchResults, setHasSearchResults] = useState(false);
 
   return (
     <div className="flex w-full max-w-full flex-1 flex-col gap-10 px-4 md:px-24">
       <HomePrompt />
-      {isLoading ? (
-        <div className="flex min-h-[200px] w-full items-center justify-center">
-          <Spinner className="size-8" />
-        </div>
-      ) : (
-        <>
-          {dashboardError && (
-            <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {dashboardError}
-            </div>
-          )}
-          <HomeCharts data={dashboard} />
-        </>
-      )}
+      <DiagramsSearch onHasResults={setHasSearchResults} />
+      {!hasSearchResults &&
+        (isLoading ? (
+          <div className="flex min-h-[200px] w-full items-center justify-center">
+            <Spinner className="size-8" />
+          </div>
+        ) : (
+          <>
+            {dashboardError && (
+              <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {dashboardError}
+              </div>
+            )}
+            <HomeCharts data={dashboard} />
+          </>
+        ))}
     </div>
   );
 }

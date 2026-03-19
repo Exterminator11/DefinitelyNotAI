@@ -1,7 +1,7 @@
 import React from "react";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { Link } from "react-router";
-import { BarChart2, LayoutList, MessageCircleIcon } from "lucide-react";
+import { LayoutList } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
@@ -41,18 +41,6 @@ function HomeHeader() {
           <Link to="/all" className="inline-flex items-center gap-2">
             <LayoutList className="size-4" aria-hidden />
             All cases
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/diagrams" className="inline-flex items-center gap-2">
-            <BarChart2 className="size-4" aria-hidden />
-            Diagrams
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/chat">
-            <MessageCircleIcon className="size-4" aria-hidden />
-            Chat
           </Link>
         </Button>
       </div>
